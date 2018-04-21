@@ -21,7 +21,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
@@ -242,7 +241,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (handler != null) {
         checkValid();
       }
-      drainHandler = handler;
+      drainHandler = conn.vertx().captureContinuation(handler);
       conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
       return this;
     }
@@ -254,7 +253,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (handler != null) {
         checkValid();
       }
-      exceptionHandler = handler;
+      exceptionHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -265,7 +264,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (handler != null) {
         checkValid();
       }
-      closeHandler = handler;
+      closeHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -276,7 +275,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (handler != null) {
         checkValid();
       }
-      endHandler = handler;
+      endHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -349,7 +348,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long start, long end, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, start, end, resultHandler);
+    doSendFile(filename, start, end, conn.vertx().captureContinuation(resultHandler));
     return this;
   }
 
@@ -384,7 +383,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse headersEndHandler(Handler<Void> handler) {
     synchronized (conn) {
-      this.headersEndHandler = handler;
+      this.headersEndHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }
@@ -392,7 +391,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
     synchronized (conn) {
-      this.bodyEndHandler = handler;
+      this.bodyEndHandler = conn.vertx().captureContinuation(handler);
       return this;
     }
   }

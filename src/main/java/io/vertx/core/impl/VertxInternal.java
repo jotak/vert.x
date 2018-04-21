@@ -131,4 +131,9 @@ public interface VertxInternal extends Vertx {
 
   @GenIgnore
   void removeCloseHook(Closeable hook);
+
+  // Rules
+  // equals / hashCode should be implemented
+  // null -> null
+  <T> Handler<T> captureContinuation(Handler<T> handler);
 }
