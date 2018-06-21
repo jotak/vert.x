@@ -4352,7 +4352,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPipelinedGetRequestStartedByResponseSent() throws Exception {
+  public void testBeginPipelinedRequestByResponseSentOnRequestCompletion() throws Exception {
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
         req.pause();
@@ -4363,6 +4363,32 @@ public class Http1xTest extends HttpTest {
       req.endHandler(v -> {
         req.response().end();
       });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    }).end(TestUtils.randomAlphaString(1024));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBeginPipelinedRequestByResponseSentBeforeRequestCompletion() throws Exception {
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        req.pause();
+        vertx.setTimer(100, id1 -> {
+          req.response().end();
+          vertx.setTimer(100, id2 -> {
+            req.resume();
+          });
+        });
+      } else if (req.method() == HttpMethod.GET) {
+        req.response().end();
+      }
     });
     startServer();
     client.close();
